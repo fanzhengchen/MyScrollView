@@ -12,9 +12,10 @@
         android:background="@android:color/holo_red_light">
 
         <View
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:background="@android:color/holo_green_light" />
+            android:id="@+id/sample_view"
+            android:background="@android:color/darker_gray"
+            android:layout_width="200dp"
+            android:layout_height="300dp" />
 
     </mintcode.com.myscrollerview.MarkScrollerView>
 

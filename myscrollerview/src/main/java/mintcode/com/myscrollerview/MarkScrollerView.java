@@ -5,7 +5,10 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.RectF;
+import android.support.v4.view.MotionEventCompat;
 import android.util.AttributeSet;
+import android.util.Log;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
@@ -95,6 +98,33 @@ public class MarkScrollerView extends FrameLayout {
             postInvalidate();
         }
         super.computeScroll();
+    }
+
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        float x = event.getX();
+        float y = event.getY();
+        int action = MotionEventCompat.getActionMasked(event);
+        String expression = "";
+        switch (action) {
+            case MotionEvent.ACTION_DOWN:
+                expression = "ACTION_DOWN";
+                break;
+            case MotionEvent.ACTION_MOVE:
+                expression = "ACTION_MOVE";
+                break;
+            case MotionEvent.ACTION_CANCEL:
+                expression = "ACTION_CANCEL";
+                break;
+            case MotionEvent.ACTION_UP:
+                expression = "ACTION_UP";
+                break;
+            case MotionEvent.ACTION_OUTSIDE:
+                expression = "ACTION_OUTSIDE";
+                break;
+        }
+//        Log.e("fuck ", x + " " + y + " " + expression);
+        return false;
     }
 
     static int dip2Pix(int dip) {
