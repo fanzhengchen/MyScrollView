@@ -1,34 +1,29 @@
 package mintcode.com.myscrollerview;
 
 import android.content.Context;
-import android.graphics.Canvas;
-import android.graphics.Color;
-import android.graphics.Paint;
-import android.graphics.RectF;
-import android.support.v4.view.MotionEventCompat;
+import android.support.v4.view.GestureDetectorCompat;
+import android.support.v4.view.ViewCompat;
 import android.util.AttributeSet;
-import android.util.Log;
+import android.util.DisplayMetrics;
+import android.view.GestureDetector;
 import android.view.MotionEvent;
-import android.view.View;
-import android.view.ViewGroup;
 import android.widget.FrameLayout;
-import android.widget.LinearLayout;
-import android.widget.Scroller;
-
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import android.widget.OverScroller;
 
 /**
  * Created by mark on 16-5-17.
  */
 public class MarkScrollerView extends FrameLayout {
-//    private static Logger logger = Logger.getLogger(TAG);
 
     private static float DENSITY;
-    private Scroller mScroller;
+    private static int OVER_PIXELS = 50;
+    private OverScroller mOverScroller;
     private Context context;
+    private GestureDetectorCompat mGestureDetectorCompat;
     private int width;
     private int height;
+    private int positionX;
+    private int positionY;
 
     public MarkScrollerView(Context context) {
         this(context, null);
@@ -49,8 +44,12 @@ public class MarkScrollerView extends FrameLayout {
 
     private void initView(Context ctx) {
         context = ctx;
-        mScroller = new Scroller(ctx);
-        DENSITY = context.getResources().getDisplayMetrics().density;
+        mOverScroller = new OverScroller(ctx);
+        DisplayMetrics dm = getResources().getDisplayMetrics();
+        mGestureDetectorCompat = new GestureDetectorCompat(ctx, gestureListener);
+        DENSITY = dm.density;
+        width = dm.widthPixels;
+        height = dm.heightPixels;
     }
 
     @Override
@@ -61,73 +60,62 @@ public class MarkScrollerView extends FrameLayout {
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
-        width = widthMeasureSpec;
-        height = heightMeasureSpec;
     }
 
-//    @Override
-//    protected void onDraw(Canvas canvas) {
-//        super.onDraw(canvas);
-//        drawTestPolygon(canvas);
-//    }
-//
-//    void drawTestPolygon(Canvas canvas) {
-//        Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
-//        paint.setColor(Color.RED);
-//        int padding = dip2Pix(10);
-//        RectF rectF = new RectF(0, 0, width - padding, height - padding);
-//        canvas.drawRoundRect(rectF, padding, padding, paint);
-//    }
 
-    public void smoothScrollTo(int fx, int fy) {
-        int dx = fx - mScroller.getFinalX();
-        int dy = fy - mScroller.getFinalY();
-        smoothScrollBy(dx, dy);
-    }
-
-    public void smoothScrollBy(int dx, int dy) {
-        mScroller.startScroll(mScroller.getFinalX(), mScroller.getFinalY(), dx, dy);
-        invalidate();
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        mGestureDetectorCompat.onTouchEvent(event);
+        return true;
     }
 
 
     @Override
     public void computeScroll() {
-        if (mScroller.computeScrollOffset()) {
-            scrollTo(mScroller.getCurrX(), mScroller.getFinalY());
-            postInvalidate();
-        }
         super.computeScroll();
-    }
-
-    @Override
-    public boolean onTouchEvent(MotionEvent event) {
-        float x = event.getX();
-        float y = event.getY();
-        int action = MotionEventCompat.getActionMasked(event);
-        String expression = "";
-        switch (action) {
-            case MotionEvent.ACTION_DOWN:
-                expression = "ACTION_DOWN";
-                break;
-            case MotionEvent.ACTION_MOVE:
-                expression = "ACTION_MOVE";
-                break;
-            case MotionEvent.ACTION_CANCEL:
-                expression = "ACTION_CANCEL";
-                break;
-            case MotionEvent.ACTION_UP:
-                expression = "ACTION_UP";
-                break;
-            case MotionEvent.ACTION_OUTSIDE:
-                expression = "ACTION_OUTSIDE";
-                break;
+        if (mOverScroller.computeScrollOffset()) {
+            positionX = mOverScroller.getCurrX();
+            positionY = mOverScroller.getCurrY();
+            scrollTo(positionX, positionY);
+        } else {
+            mOverScroller.springBack(positionX, positionY, 0, width, 0, height);
         }
-//        Log.e("fuck ", x + " " + y + " " + expression);
-        return false;
     }
 
     static int dip2Pix(int dip) {
         return (int) (dip * DENSITY + 0.5f);
     }
+
+    private GestureDetector.SimpleOnGestureListener gestureListener = new GestureDetector.SimpleOnGestureListener() {
+        @Override
+        public boolean onDown(MotionEvent e) {
+            mOverScroller.forceFinished(true);
+            ViewCompat.postInvalidateOnAnimation(MarkScrollerView.this);
+            return true;
+        }
+
+        @Override
+        public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
+            mOverScroller.forceFinished(true);
+            mOverScroller.fling(positionX, positionY,
+                    (int) -velocityX, (int) -velocityY, 0, width, 0, height);
+            ViewCompat.postInvalidateOnAnimation(MarkScrollerView.this);
+            return true;
+        }
+
+        @Override
+        public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
+            mOverScroller.forceFinished(true);
+            int dx = (int) distanceX;
+            int dy = (int) distanceY;
+//            int newPositionX = positionX + dx;
+//            int newPositionY = positionY + dy;
+            mOverScroller.startScroll(positionX, positionY, dx, dy, 0);
+            ViewCompat.postInvalidateOnAnimation(MarkScrollerView.this);
+            return true;
+        }
+
+    };
+
+
 }
